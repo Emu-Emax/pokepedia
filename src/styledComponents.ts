@@ -52,7 +52,7 @@ margin-right: ${multiplyGrid(1.5)};
 font-weight: bold;
 `
 
-export const Logo = styled.h1`
+export const PageName = styled.h1`
 display: flex;
 justify-content: center;
 align-items: center;
@@ -77,4 +77,8 @@ background-repeat: no-repeat;
     @-moz-keyframes spin { 100% { -moz-transform: rotate(360deg); } }
 @-webkit-keyframes spin { 100% { -webkit-transform: rotate(360deg); } }
 @keyframes spin { 100% { -webkit-transform: rotate(360deg); transform:rotate(360deg); } }
+`
+
+export const Row = styled.div`
+display: flex;
 `

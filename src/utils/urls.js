@@ -1,8 +1,9 @@
-const urls = new Map([
-  ['home', '/'],
-  ['private', '/private'],
-  ['pokemonDetail', '/pokemon/:name'],
-  ['notFound', '.*'],
-]);
+const urls = {
+  'home': '/',
+  'dashboard': '/dashboard',
+  'pokemonDetail': '/pokemon/:name',
+  'login': '/login',
+  'notFound': '.*',
+};
 
 export default urls;

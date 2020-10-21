@@ -1,68 +1,63 @@
-import React, {FunctionComponent, useEffect, useState} from 'react';
-import API from "../utils/api";
+import React, {useEffect, useState} from 'react';
 import styled from 'styled-components'
 import {useParams} from "react-router";
 import {history} from "../utils";
-import {Bold, HeaderTwo, Label, PokemonName, Spinner, StyledButton} from "../globalStyles";
+import {Bold, HeaderTwo, Label, PokemonName, Spinner, StyledButton} from "../styledComponents";
 import {multiplyGrid} from '../theme';
+import {useDispatch, useSelector} from "react-redux";
+import {getPokemon} from "../state/actions";
+import {RootStore} from "../state/store";
+import {getPokemonType} from "../utils/helperFunctions";
+import {AbilityWrapper, initPokemon} from "../state/objectTypes";
 
-
-type PokemonDetails = {
-    name: string,
-    height: number,
-    weight: number,
-    abilities: any,
-    sprites: any,
-    types: any,
-};
 
 interface ParamTypes {
     name: string
 }
 
-
-export const PokemonDetails: FunctionComponent = () => {
-    const [pokemonDetails, setPokemonDetails] = useState<PokemonDetails>();
-    const [abilities, setAbilities] = useState([]);
-    const [fetched, setFetched] = useState(false);
+export const PokemonDetails = () => {
     const {name} = useParams<ParamTypes>()
+    const dispatch = useDispatch();
+    const pokemonDetails = useSelector((state: RootStore) => state.pokemonReducer);
+    const [pokemon, setPokemon] = useState(initPokemon);
 
     useEffect(() => {
-        API.getPokemon('pokemon/' + name).then(r => {
-                setPokemonDetails(r.data);
-                setAbilities(r.data.abilities)
-                setFetched(true);
-            }
-        )
-    })
+        const p = pokemonDetails.pokemons.find(p => p.name === name);
+        if (p) {
+            setPokemon(p);
+        } else {
+            dispatch(getPokemon(name));
+            setPokemon(pokemonDetails.pokemons[0]);
+        }
+    }, [])
 
-    const abilitiesList = abilities.map((item: any, index: number) => {
-        return (
-            <Label key={index}>{item.ability.name}</Label>
-        )
-    })
 
     return (
         <Canvas>
-            {fetched ? <>
+            {!pokemonDetails.loading ? <>
                 <StyledButton onClick={() => history.push('/')}>Return</StyledButton>
-                <PokemonName>{pokemonDetails!.name}</PokemonName>
-                <HeaderTwo>{pokemonDetails!.types[0].type.name}</HeaderTwo>
+                <PokemonName>{pokemon.name}</PokemonName>
+                <HeaderTwo>{getPokemonType(pokemon)}</HeaderTwo>
                 <Row>
-                    <Bold>Height: </Bold> {pokemonDetails!.height}
+                    <Bold>Height: </Bold> {pokemon.height}
                 </Row>
                 <Row>
-                    <Bold>Weight: </Bold> {pokemonDetails!.weight}
+                    <Bold>Weight: </Bold> {pokemon.weight}
                 </Row>
                 <Row>
-                    <PokemonSprite url={pokemonDetails!.sprites.front_default}/>
-                    <PokemonSprite url={pokemonDetails!.sprites.back_default}/>
-                    <PokemonSprite url={pokemonDetails!.sprites.front_shiny}/>
-                    <PokemonSprite url={pokemonDetails!.sprites.back_shiny}/>
+                    <PokemonSprite url={pokemon.sprites.front_default}/>
+                    <PokemonSprite url={pokemon.sprites.back_default}/>
+                    <PokemonSprite url={pokemon.sprites.front_shiny}/>
+                    <PokemonSprite url={pokemon.sprites.back_shiny}/>
                 </Row>
 
                 <HeaderTwo>Abilities:</HeaderTwo>
-                <Row>{abilitiesList}</Row>
+
+                {pokemon.abilities.map((item: AbilityWrapper, index: number) => {
+                    return (
+                        <Label key={index}>{item.ability.name}</Label>
+                    )
+                })}
 
             </> : <Spinner/>}
         </Canvas>

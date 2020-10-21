@@ -1,13 +1,15 @@
 import React from 'react';
 import '../App.css';
-import {PokeList} from "./PokeList";
 import {Route, Router, Switch} from 'react-router-dom';
 import {history} from '../utils';
 import urls from '../utils/urls';
 import {PokemonDetails} from "./PokemonDetails";
 import styled from 'styled-components'
-import {AuthorizedView} from "./AuthorizedView";
+import {Dashboard} from "./Dashboard";
 import {NotFoundView} from "./NotFoundView";
+import PokeList from "./PokeList";
+import {Login} from "./Login";
+import {PrivateRoute} from "./PrivateRoute";
 
 
 function App() {
@@ -15,14 +17,19 @@ function App() {
         <Router history={history}>
             <BodyWrapper>
                 <Switch>
-                    <Route exact path={urls.get('home')}>
+                    <Route exact path={urls['home']}>
                         <PokeList/>
                     </Route>
-                    <Route exact path={urls.get('private')}>
-                        <AuthorizedView/>
+                    <Route path={urls['dashboard']}>
+                        <PrivateRoute>
+                            <Dashboard/>
+                        </PrivateRoute>
                     </Route>
-                    <Route exact path={urls.get('pokemonDetail')}>
+                    <Route exact path={urls['pokemonDetail']}>
                         <PokemonDetails/>
+                    </Route>
+                    <Route exact path={urls['login']}>
+                        <Login/>
                     </Route>
                     <Route>
                         <NotFoundView/>

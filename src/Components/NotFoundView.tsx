@@ -1,7 +1,7 @@
 import React, {FunctionComponent} from 'react';
 import styled from 'styled-components'
 import {history} from "../utils";
-import {HeaderTwo, StyledButton} from "../globalStyles";
+import {HeaderTwo, StyledButton} from "../styledComponents";
 import {multiplyGrid} from '../theme';
 
 const slowpoke =  require('../assets/images/slowpoke.png')

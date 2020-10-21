@@ -1,133 +1,117 @@
 import React, {useEffect, useState} from 'react';
-import API from "../utils/api";
 import {PokemonCard} from "./PokemonCard";
 import styled from 'styled-components'
-import {Logo, Spinner, StyledButton} from "../globalStyles";
+import {PageName, Spinner, StyledButton} from "../styledComponents";
 import {history} from "../utils";
-import axios from 'axios';
-import swal from 'sweetalert';
 import {multiplyGrid} from "../theme";
+import {useDispatch, useSelector} from 'react-redux';
+import {fetchNextPokemons, fetchPokemonResults, getPokemon} from "../state/actions";
+import {RootStore} from '../state/store';
+import {comparePokemonNames, comparePokemonTypes, getPokemonType} from "../utils/helperFunctions";
+import urls from "../utils/urls";
+import {PokemonObjectType} from "../state/objectTypes";
 
-type PokemonObject = {
-    results: Array<PokemonItem>,
-    next: string,
-};
 
-type PokemonItem = {
-    name: string,
-    sprites: any,
-    types: any,
-};
-
-export const PokeList = () => {
-    const [pokemonObject, setPokemonObject] = useState<PokemonObject>();
-    const [pokemonDetails, setPokemonDetails] = useState<PokemonItem[]>([]);
+const PokeList = () => {
+    const dispatch = useDispatch();
+    const fetchedPokemons = useSelector((state: RootStore) => state.pokemonReducer);
     const [fetched, setFetched] = useState(false);
     const [searchValue, setSearchValue] = useState('');
     const [sortAlphabetically, setSortAlphabetically] = useState('');
+    const [sortByType, setSortByType] = useState('');
 
     useEffect(() => {
-        API.getPokemon('pokemon?limit=4').then(r => setPokemonObject(r.data))
+        if (fetchedPokemons.pokemons.length === 0) {
+            dispatch(fetchPokemonResults());
+        }
+        setFetched(true);
     }, [])
 
     useEffect(() => {
-        const pokemons = pokemonObject && pokemonObject!.results;
-        if (pokemons) {
-            const fetchPokemonDetails = async () => {
-                for (let i = 0; i < pokemons!.length; i++) {
-                    await API.getPokemon('pokemon/' + pokemons![i].name).then(r => {
-                        pokemonDetails.push(r.data);
-                    })
-                }
+        if (!fetchedPokemons.loading && fetchedPokemons.next) {
+            let pokemons = fetchedPokemons.pokemonResults;
+            let offset: number = fetchedPokemons.pokemons.length;
+            for (let i = offset; i < pokemons!.length; i++) {
+                dispatch(getPokemon(pokemons[i].name));
             }
-            fetchPokemonDetails().then(() => {
-                setPokemonDetails(pokemonDetails);
-                if (pokemonDetails.length !== 0) setFetched(true)
-            });
         }
+    }, [fetchedPokemons.next])
 
-
-    }, [pokemonObject])
 
     const loadMore = () => {
-        setFetched(false);
-        axios.get(pokemonObject!.next).then(r => {
-                setPokemonObject(r.data);
-            }
-        )
+        dispatch(fetchNextPokemons(fetchedPokemons.next));
     }
 
-    const handleAuthorize = () => {
-        const token = localStorage.getItem('accessToken');
-        if (token) {
-            swal('you already have token!');
-        } else {
-            localStorage.setItem('accessToken', 'hello_poke_world');
-            swal('Access granted!');
-        }
-    };
 
     const handleSortAlpha = () => {
         if (sortAlphabetically === 'ascending') {
-            setPokemonDetails([...pokemonDetails].sort((a, b) => b.name.localeCompare(a.name)));
+            fetchedPokemons.pokemons = ([...fetchedPokemons.pokemons].sort(comparePokemonNames));
             setSortAlphabetically('descending');
         } else {
-            setPokemonDetails([...pokemonDetails].sort((a, b) => a.name.localeCompare(b.name)));
+            fetchedPokemons.pokemons = ([...fetchedPokemons.pokemons].sort((a, b) => comparePokemonNames(b, a)));
             setSortAlphabetically('ascending');
         }
     }
+
 
     const handleSortByType = () => {
-        if (sortAlphabetically === 'none' || sortAlphabetically === 'descending') {
-            setPokemonDetails([...pokemonDetails].sort((a, b) => a.types[0].type.name.localeCompare(b.types[0].type.name)));
-            setSortAlphabetically('ascending');
+
+        if (sortByType === '' || sortByType === 'descending') {
+            fetchedPokemons.pokemons = ([...fetchedPokemons.pokemons].sort(comparePokemonTypes));
+            setSortByType('ascending');
         }
-        if (sortAlphabetically === 'ascending') {
-            setPokemonDetails([...pokemonDetails].sort((a, b) => b.types[0].type.name.localeCompare(a.types[0].type.name)));
-            setSortAlphabetically('descending');
+        if (sortByType === 'ascending') {
+            fetchedPokemons.pokemons = ([...fetchedPokemons.pokemons].sort((a, b) => comparePokemonTypes(b, a)));
+            setSortByType('descending');
         }
     }
 
-    const pokemonsList = pokemonDetails.map((item: PokemonItem, index: number) => {
+    const pokemonsList = fetchedPokemons.pokemons.map((item: PokemonObjectType, index: number) => {
         if (item.name.includes(searchValue))
             return (
                 <PokemonCard key={index}
                              name={item.name}
                              image={item.sprites.front_default}
-                             pokemonType={item.types[0].type.name}
+                             type={getPokemonType(item)}
                 />
             )
-        return
     })
 
     return (
         <Canvas>
-            <Logo>Pokepedia</Logo>
-            Or enter /pokemon/name
+            <PageName>Pokepedia</PageName>
+            <Row>
+                <StyledButton onClick={() => history.push(urls['dashboard'])}>Dashboard</StyledButton>
+                <StyledButton onClick={() => history.push(urls['login'])}>Login</StyledButton>
+            </Row>
+
             <SearchForm onSubmit={() => {
                 if (searchValue !== '') history.push('pokemon/' + searchValue)
             }}>
                 <SearchField type='text' onChange={(e) => setSearchValue(e.target.value)}/>
                 <StyledButton type="submit">Search</StyledButton>
             </SearchForm>
+            Or enter /pokemon/name
+
             <FilterSection>
                 <StyledButton onClick={() => handleSortAlpha()}>Sort
                     alphabetically: {sortAlphabetically}</StyledButton>
                 <StyledButton onClick={() => handleSortByType()}>Sort
                     by type</StyledButton>
-                <StyledButton onClick={() => history.push('private')}>Enter private room</StyledButton>
-                <StyledButton onClick={() => handleAuthorize()}>Authorize</StyledButton>
-
             </FilterSection>
+
             <Row>
-                {pokemonsList}
-                {fetched && <MoreWrapper><StyledButton onClick={() => loadMore()}>More</StyledButton></MoreWrapper>}
-                {!fetched && <MoreWrapper><Spinner/></MoreWrapper>}
+                {fetched ? pokemonsList : <Spinner/>}
+                {!fetchedPokemons.loading ?
+                    <MoreWrapper><StyledButton onClick={() => loadMore()}>More</StyledButton></MoreWrapper>
+                    : <MoreWrapper><Spinner/> </MoreWrapper>}
             </Row>
+
         </Canvas>
     )
 }
 
+export default PokeList;
 
 const Canvas = styled.div`
 display: flex;
@@ -162,11 +146,14 @@ display: flex;
 justify-content: center;
 align-items: center;
 width: 100%;
+margin-top: ${multiplyGrid(5)};
+margin-bottom; ${multiplyGrid(5)};
 `
 
 const FilterSection = styled.div`
 justify-content: center;
 align-items: center;
+margin-top: ${multiplyGrid(3)};
 `
 
 const SearchField = styled.input`

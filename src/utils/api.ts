@@ -1,15 +1,5 @@
 import axios from 'axios';
 
-// interface ServerResponse {
-//     data: ServerData
-// }
-//
-// interface ServerData {
-//     foo: string
-//     bar: number
-// }
-
-
 const API = {
     getPokemon: (pokeName: string) => get('/' + pokeName + '/', {}),
 };
